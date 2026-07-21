@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "qms_event": {
+      "title": "QMS Event",
+      "description": "Represents a scheduled ISO 9001 quality event, such as an audit or management review, synchronized with Google Calendar.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the event in Firestore.",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the calendar event.",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description or agenda.",
+          "maxLength": 1000
+        },
+        "eventType": {
+          "type": "string",
+          "description": "Type of ISO 9001 quality event.",
+          "enum": ["Internal Audit", "External Audit", "Document Review", "Management Review", "CAPA Follow-up"]
+        },
+        "status": {
+          "type": "string",
+          "description": "Scheduling status.",
+          "enum": ["Scheduled", "Confirmed", "Completed", "Cancelled"]
+        },
+        "startDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Start date and time of the event."
+        },
+        "endDateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "End date and time of the event."
+        },
+        "location": {
+          "type": "string",
+          "description": "Physical location or digital meeting link.",
+          "maxLength": 500
+        },
+        "attendees": {
+          "type": "array",
+          "description": "List of attendee emails.",
+          "maxLength": 100
+        },
+        "calendarEventId": {
+          "type": "string",
+          "description": "Associated Google Calendar Event ID.",
+          "maxLength": 200
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Email address of the user who scheduled the event.",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp."
+        }
+      },
+      "required": ["id", "title", "eventType", "status", "startDateTime", "endDateTime", "createdBy"]
+    }
+  },
+  "firestore": {
+    "qms_events/{eventId}": {
+      "schema": {
+        "$ref": "#/entities/qms_event"
+      },
+      "description": "Stores details of scheduled QMS audits, reviews, and meetings synchronized to Google Calendar."
+    }
+  }
+}

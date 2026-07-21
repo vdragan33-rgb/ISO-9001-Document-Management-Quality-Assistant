@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net (Strict Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Core Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    function isOwner(email) {
+      return isSignedIn() && request.auth.token.email == email;
+    }
+    
+    // Entity Schema Validation
+    function isValidEvent(data) {
+      return data.keys().hasAll(['id', 'title', 'eventType', 'status', 'startDateTime', 'endDateTime', 'createdBy', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.title is string && data.title.size() <= 200
+        && data.eventType is string && data.eventType in ['Internal Audit', 'External Audit', 'Document Review', 'Management Review', 'CAPA Follow-up']
+        && data.status is string && data.status in ['Scheduled', 'Confirmed', 'Completed', 'Cancelled']
+        && data.startDateTime is string && data.startDateTime.size() <= 100
+        && data.endDateTime is string && data.endDateTime.size() <= 100
+        && (!data.keys().hasAny(['description']) || (data.description is string && data.description.size() <= 1000))
+        && (!data.keys().hasAny(['location']) || (data.location is string && data.location.size() <= 500))
+        && (!data.keys().hasAny(['calendarEventId']) || (data.calendarEventId is string && data.calendarEventId.size() <= 200))
+        && (!data.keys().hasAny(['attendees']) || (data.attendees is list && data.attendees.size() <= 100));
+    }
+
+    // Rules for QMS Events
+    match /qms_events/{eventId} {
+      allow get: if isEmailVerified() && isOwner(existing().createdBy);
+      
+      // Strict List Query: enforce list query filters on client
+      allow list: if isEmailVerified() && resource.data.createdBy == request.auth.token.email;
+      
+      allow create: if isEmailVerified() 
+        && isValidId(eventId) 
+        && isOwner(incoming().createdBy)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && isValidEvent(incoming());
+        
+      allow update: if isEmailVerified()
+        && isValidId(eventId)
+        && isOwner(existing().createdBy)
+        && isOwner(incoming().createdBy)
+        // Keep createdAt and id immutable
+        && incoming().createdAt == existing().createdAt
+        && incoming().id == existing().id
+        && incoming().updatedAt == request.time
+        && isValidEvent(incoming());
+        
+      allow delete: if isEmailVerified()
+        && isValidId(eventId)
+        && isOwner(existing().createdBy);
+    }
+  }
+}

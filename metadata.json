@@ -1,0 +1,6 @@
+{
+  "name": "ISO 9001 Document Management & Quality Assistant",
+  "description": "An ISO 9001 quality management system (QMS) assistant featuring Google Drive & Sheets integration, dynamic process library navigation, interactive form generator, search, automatic approval workflows, and a Gemini-powered document quality auditor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
